@@ -1,0 +1,82 @@
+---
+interface ColorCardProps {
+  colorHex?: string;
+  colorName?: string;
+  cmyk?: string; // новое поле
+}
+
+const {
+  colorHex = "#FF4500",
+  colorName = "OrangeRed",
+  cmyk = "", // по умолчанию пустая строка
+}: ColorCardProps = Astro.props;
+
+// Функции для автоматического вычисления rgb и hsb...
+function hexToRgb(hex: string): [number, number, number] {
+  let c = hex.replace(/^#/, "");
+  if (c.length === 3)
+    c = c
+      .split("")
+      .map((x: string) => x + x)
+      .join("");
+  const num = parseInt(c, 16);
+  return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+}
+
+function rgbToHsb([r, g, b]: [number, number, number]): [
+  number,
+  number,
+  number,
+] {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b),
+    min = Math.min(r, g, b);
+  let h = 0,
+    s = 0,
+    v = max;
+
+  const d = max - min;
+  if (max !== 0) s = d / max;
+
+  if (max !== min) {
+    switch (max) {
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      case b:
+        h = (r - g) / d + 4;
+        break;
+    }
+    h /= 6;
+  }
+  return [Math.round(h * 360), Math.round(s * 100), Math.round(v * 100)];
+}
+
+const rgbArr = hexToRgb(colorHex);
+const rgbStr = `rgb(${rgbArr[0]}, ${rgbArr[1]}, ${rgbArr[2]})`;
+
+const hsbArr = rgbToHsb(rgbArr);
+const hsbStr = `hsb(${hsbArr[0]}, ${hsbArr[1]}%, ${hsbArr[2]}%)`;
+---
+
+<div
+  style={`background:${colorHex};border-radius:8px;padding:1.5rem 1rem;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:140px;color:#fff;`}
+>
+  <div style="font-size:1.2rem;font-weight:600;">{colorHex}</div>
+  <div style="font-size:1rem;font-weight:500;opacity:0.9;">{rgbStr}</div>
+  <div style="font-size:1rem;font-weight:500;opacity:0.9;">{hsbStr}</div>
+  {
+    cmyk && (
+      <div style="font-size:1rem;font-weight:500;opacity:0.9;">CMYK {cmyk}</div>
+    )
+  }
+</div>
+<div style="margin-top:0.5rem;">
+  <div style="font-weight:600;">{colorName}</div>
+  <div style="font-size:0.95rem;opacity:0.7;">Color</div>
+</div>
